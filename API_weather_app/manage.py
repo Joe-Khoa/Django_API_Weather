@@ -3,7 +3,7 @@
 import os
 import sys
 
-
+# 
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'API_weather_app.settings')
     try:
