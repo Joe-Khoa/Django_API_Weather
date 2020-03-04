@@ -4,6 +4,15 @@ from django.http import HttpResponse
 # Create your views here.
 import urllib.request
 
+
+from django.shortcuts import render,redirect
+from django.contrib import messages
+# Create your views here.
+from main_app.forms import TodoForm
+from main_app.models import TodoModel
+
+
+
 def index(request):
     data = {}
     if request.method == 'POST':
@@ -15,16 +24,8 @@ def index(request):
             return render(request,'main_app/index.html',data)
 
         else:
-            # print('\n'*3,url_open,'\n'*3)
-            # source = url_open.read()
-            # source = urllib.request.urlopen('https://samples.openweathermap.org/data/2.5/weather?q=London,uk&appid=b6907d289e10d714a6e88b30761fae22').read()
-            # print('/n'+source+'/n')
-            # byte object to string obj ( standard JSON)
-            # print(type(source))
             list_of_data = source.decode('utf-8')
-            # to normal obj (string obj to object)
             list_of_data = json.loads(list_of_data)
-            # if list_of_data['cod'] != '404':
             data = {
                 "city_name":str(list_of_data['name']),
                 "country_code":(str(list_of_data['sys']['country']).lower()),
@@ -36,33 +37,24 @@ def index(request):
     return render(request,'main_app/index.html',data)
 
 
+def to_do_list(request):
+    items_list = TodoModel.objects.order_by('-date')
+    if request.method == 'POST':
+        form_ = TodoForm(request.POST)
+        if form_.is_valid():
+            form_.save()
+            return redirect('to_do_list')
+    form_ = TodoForm()
+    page = {
+        'form_':form_,
+        'list':items_list,
+        'title':'TODO LIST',
+    }
+    return render(request,'todolist/todolist.html',page)
 
-
-############################### ___draft___###############################
-
-import os
-module_dir = os.path.dirname(__file__)  # get current directory
-file_path = os.path.join(module_dir, 'city_list.json')
-from pprint import pprint
-
-def get_json():
-    # with open(file_path) as f:
-    #     print(type(f))
-    data = ''
-    with open(file_path,encoding='cp1252') as f:
-        data = json.load(f)
-        for line in f:
-            # data = data + line
-            pprint(type(line))
-    # print(data)
-    # print(data)
-    # for a in f:
-        # x = json.load(a)
-        # print(a)
-    # data = json.loads(f)
-    # print(data)
-    # data = []
-    # with open(file_path) as f:
-    #     for line in f:
-    #         data.append(json.loads(line))
-    # print(data)
+def remove_item(request,item_id):
+    # print('test remove!')
+    item = TodoModel.objects.get(id=item_id)
+    item.delete()
+    messages.info(request,"Item removed!")      # send to template
+    return redirect('to_do_list')
